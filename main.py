@@ -2,6 +2,7 @@ import os
 import sys
 
 import requests
+from PyQt5 import QtCore
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QDoubleSpinBox
 
@@ -13,10 +14,8 @@ class Example(QWidget):
         super().__init__()
         self.initUI()
 
-        self.scale_input.valueChanged.connect(self.update_image)
-
     def getImage(self):
-        map_request = f"http://static-maps.yandex.ru/1.x/?ll=37.530887,55.703118&spn=0.002,0.002&l=map&scale={str(self.scale_input.value())[:4]}"
+        map_request = f"http://static-maps.yandex.ru/1.x/?ll=37.530887,55.703118&spn=0.002,0.002&l=map&scale={str(self.scale)[:3]}"
         response = requests.get(map_request)
 
         if not response:
@@ -34,6 +33,7 @@ class Example(QWidget):
         self.getImage()
         ## Изображение
         self.image.setPixmap(QPixmap(self.map_file))
+        self.scale_label.setText(f"Scale > {str(self.scale)[:3]}")
 
     def initUI(self):
         self.image = QLabel(self)
@@ -41,19 +41,26 @@ class Example(QWidget):
         self.image.resize(600, 450)
         self.setGeometry(100, 100, *SCREEN_SIZE)
         self.setWindowTitle('Отображение карты')
-        self.scale_input = QDoubleSpinBox(self)
-        self.scale_input.setMinimum(1.0)
-        self.scale_input.setMaximum(4.0)
-        self.scale_input.setSingleStep(0.1)
-        self.scale_input.setGeometry(100, 475, 200, 50)
+        self.scale = 1
         self.scale_label = QLabel(self)
-        self.scale_label.setText("Scale >")
+        self.scale_label.setText(f"Scale > {self.scale}")
         font = QFont()
         font.setBold(True)
         font.setPointSize(16)
         self.scale_label.setFont(font)
-        self.scale_label.setGeometry(10, 475, 100, 50)
+        self.scale_label.setGeometry(10, 475, 150, 50)
         self.update_image()
+
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_PageUp:
+            if self.scale < 4:
+                self.scale += 0.1
+                self.update_image()
+
+        if event.key() == QtCore.Qt.Key_PageDown:
+            if self.scale > 1:
+                self.scale -= 0.1
+                self.update_image()
 
     def closeEvent(self, event):
         """При закрытии формы подчищаем за собой"""
